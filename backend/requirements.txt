@@ -1,1 +1,6 @@
 # Python dependencies
+pandas
+scikit-learn
+transformers
+sentencepiece
+emoji
