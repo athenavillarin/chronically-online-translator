@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+backend/fine_tuned_model/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+.venv/
+env/
+*.egg-info/
+.DS_Store
+.envbackend/fine_tuned_model/
