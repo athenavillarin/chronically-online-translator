@@ -5,3 +5,6 @@ transformers
 sentencepiece
 emoji
 nltk
+datasets
+torch
+accelerate

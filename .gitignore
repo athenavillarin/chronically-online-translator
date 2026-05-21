@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# model weights - root backend
+backend/fine_tuned_model/*.safetensors
+backend/fine_tuned_model/*.bin
+backend/fine_tuned_model/*.pt
+
+# model weights - notebooks folder (prevent accidental re-push)
+notebooks/backend/
