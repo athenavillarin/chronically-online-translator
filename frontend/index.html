@@ -1,1 +1,66 @@
-<!-- Frontend index page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Chronically Online Translator</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+	<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+	<div class="page-shell">
+		<header class="topbar">
+			<div class="brand" aria-label="Chronically Online Translator">
+				<button class="back-button" type="button" aria-label="Go back">←</button>
+				<div class="brand-copy">
+					<strong>Context-Aware Neural Style Transfer for Internet Vernacular and Digital Slang Normalization</strong>
+				</div>
+			</div>
+		</header>
+
+		<main class="hero">
+			<section class="hero-copy">
+				<p class="eyebrow">Chronically Online Translator</p>
+				<h1>Turn internet slang into clear language.</h1>
+				<p>
+					Paste slang on the left, review the translation on the right, and always see what the system is doing.
+				</p>
+			</section>
+
+			<section class="workspace" aria-label="Translation workspace">
+				<article class="panel panel-input">
+					<div class="panel-heading">
+						<span class="panel-kicker">Slang input</span>
+						<h2>Paste the slang here.</h2>
+					</div>
+					<label class="field-label" for="slangInput">Enter slang, abbreviations, or chat speak.</label>
+					<textarea id="slangInput" placeholder="fr fr this fit is bussin ngl "></textarea>
+				</article>
+
+				<article class="panel panel-output">
+					<div class="panel-heading">
+						<span class="panel-kicker">Translated output</span>
+						<h2>Plain-language result.</h2>
+					</div>
+					<div class="status-strip" aria-live="polite">
+						<span class="status-dot" aria-hidden="true"></span>
+						<span id="statusText">Ready to translate.</span>
+					</div>
+					<div class="output-card">
+						<p id="translatedOutput">Your translation will appear here.</p>
+					</div>
+				</article>
+			</section>
+
+			<div class="actions-row" aria-label="Translation actions">
+				<button id="translateButton" type="button">Translate</button>
+				<button id="clearButton" type="button" class="secondary">Clear</button>
+			</div>
+		</main>
+	</div>
+
+	<script src="script.js"></script>
+</body>
+</html>
