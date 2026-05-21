@@ -242,5 +242,9 @@ chronically-online-translator/
 
 ---
 
-
+### Training Data
+ - Dataset Source: GenZ Slang Pairs (Programmer-RD-AI/genz-slang-pairs-1k)
+ - Source: https://www.kaggle.com/datasets/programmerrdai/genz-slang-pairs-1k
+ - Total pairs: ~1,000 sentence pairs, split 85/15 into train/test sets.
+   
 **Last Updated:** May 2026
