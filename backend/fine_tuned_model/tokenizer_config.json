@@ -105,7 +105,6 @@
     "<extra_id_99>"
   ],
   "is_local": false,
-  "local_files_only": false,
   "model_max_length": 512,
   "pad_token": "<pad>",
   "sp_model_kwargs": {},
