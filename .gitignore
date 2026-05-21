@@ -224,4 +224,5 @@ backend/fine_tuned_model/*.bin
 backend/fine_tuned_model/*.pt
 
 # model weights - notebooks folder (prevent accidental re-push)
-notebooks/backend/
+notebooks/backend/backend/fine_tuned_model/
+backend/fine_tuned_model/checkpoint-222/
