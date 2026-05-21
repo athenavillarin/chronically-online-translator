@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-fp16 = torch.cuda.is_available()
 from datasets import Dataset
 from transformers import (
     AutoModelForSeq2SeqLM,
@@ -17,6 +16,8 @@ from transformers import (
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+fp16 = torch.cuda.is_available()
 
 MODEL_NAME = "google/flan-t5-small"
 MAX_INPUT_LENGTH = 128
@@ -58,7 +59,10 @@ def preprocess_function(examples, tokenizer):
         truncation=True,
         padding="max_length",
     )
-    
+    labels["input_ids"] = [
+    [(token if token != tokenizer.pad_token_id else -100) for token in label]
+    for label in labels["input_ids"]
+    ]
     model_inputs["labels"] = labels["input_ids"]
     return model_inputs
 
