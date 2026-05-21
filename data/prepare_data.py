@@ -17,7 +17,6 @@ from typing import Any, List, Sequence, Tuple
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 
 LOGGER = logging.getLogger(__name__)
@@ -33,7 +32,6 @@ HIDDEN_CHAR_PATTERN = re.compile(
 	"\u2060-\u2064\u2066-\u206F\uFEFF]"
 )
 WHITESPACE_PATTERN = re.compile(r"\s+")
-WORD_PATTERN = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?")
 EMOJI_FALLBACK_PATTERN = re.compile(
 	"(?:"
 	"[\U0001F1E6-\U0001F1FF]{2}|"
@@ -70,8 +68,8 @@ def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
 	lower_map = {column.lower().strip(): column for column in renamed.columns}
 
 	aliases = {
-		"source_text": ["source_text", "gen_z", "slang", "output", "translation"],
-		"target_text": ["target_text", "normal", "input", "src", "english"],
+		"source_text": ["source_text", "normal", "input", "src", "english"],
+		"target_text": ["target_text", "gen_z", "slang", "output", "translation"],
 	}
 
 	resolved_columns = {}
@@ -136,89 +134,6 @@ def get_tokenizer(model_name: str) -> Any:
 	transformers_module = importlib.import_module("transformers")
 	tokenizer_class = getattr(transformers_module, "T5Tokenizer")
 	return tokenizer_class.from_pretrained(model_name)
-
-
-def get_nltk_tools() -> tuple[Any, Any]:
-	"""Load stemming and lemmatization tools only when the pipeline needs them."""
-
-	nltk_module = importlib.import_module("nltk")
-	stemmer = nltk_module.stem.PorterStemmer()
-	lemmatizer = nltk_module.stem.WordNetLemmatizer()
-	return stemmer, lemmatizer
-
-
-def ensure_wordnet_corpus() -> None:
-	"""Download WordNet resources on demand so lemmatization works reliably.
-
-	The project already depends on internet access for the Hugging Face tokenizer,
-	so this keeps lemmatization available even on a fresh machine without a manual
-	NLTK data setup step.
-	"""
-
-	nltk_module = importlib.import_module("nltk")
-	try:
-		nltk_module.data.find("corpora/wordnet")
-		nltk_module.data.find("corpora/omw-1.4")
-	except LookupError:
-		nltk_module.download("wordnet", quiet=True)
-		nltk_module.download("omw-1.4", quiet=True)
-
-
-def tokenize_for_linguistic_normalization(text: str) -> List[str]:
-	"""Tokenize text while keeping emoji sequences as standalone tokens.
-
-	This preserves the semantics of expressive slang while still letting us apply
-	classic NLP steps such as stopword removal, stemming, and lemmatization to the
-	word tokens. Emojis are left untouched because they often carry the strongest
-	meaning in internet language.
-	"""
-
-	tokens: List[str] = []
-	cursor = 0
-	for span in get_emoji_spans(text):
-		start = span["match_start"]
-		end = span["match_end"]
-		if start > cursor:
-			segment = text[cursor:start]
-			tokens.extend(WORD_PATTERN.findall(segment.lower()))
-		tokens.append(text[start:end])
-		cursor = end
-
-	if cursor < len(text):
-		tokens.extend(WORD_PATTERN.findall(text[cursor:].lower()))
-
-	return tokens
-
-
-def normalize_text_for_linguistics(text: str) -> dict[str, str]:
-	"""Create additional normalized views of the text for rubric coverage.
-
-	The training pairs themselves stay cleaned but otherwise intact. These extra
-	views demonstrate stopword removal, stemming, and lemmatization explicitly so
-	the preprocessing pipeline satisfies the data-engineering criteria without
-	distorting the translation target.
-	"""
-
-	stopwords = set(ENGLISH_STOP_WORDS)
-	stemmer, lemmatizer = get_nltk_tools()
-	ensure_wordnet_corpus()
-
-	tokens = tokenize_for_linguistic_normalization(text)
-	content_tokens = [token for token in tokens if token not in stopwords]
-	stemmed_tokens = [
-		stemmer.stem(token) if WORD_PATTERN.fullmatch(token) else token
-		for token in content_tokens
-	]
-	lemmatized_tokens = [
-		lemmatizer.lemmatize(token) if WORD_PATTERN.fullmatch(token) else token
-		for token in content_tokens
-	]
-
-	return {
-		"no_stopwords": WHITESPACE_PATTERN.sub(" ", " ".join(content_tokens)).strip(),
-		"stemmed": WHITESPACE_PATTERN.sub(" ", " ".join(stemmed_tokens)).strip(),
-		"lemmatized": WHITESPACE_PATTERN.sub(" ", " ".join(lemmatized_tokens)).strip(),
-	}
 
 
 def clean_text(text: object) -> str | None:
@@ -287,72 +202,6 @@ def remove_missing_and_empty_rows(df: pd.DataFrame) -> pd.DataFrame:
 		& cleaned["target_text"].astype(str).str.strip().ne("")
 	]
 	return cleaned.reset_index(drop=True)
-
-
-def add_linguistic_normalization_columns(df: pd.DataFrame) -> pd.DataFrame:
-	"""Add stopword-free, stemmed, and lemmatized inspection columns.
-
-	These columns are not used for fine-tuning directly. They exist so the
-	pipeline clearly demonstrates the full preprocessing stack requested in the
-	rubric and so the project has a richer processed artifact to inspect.
-	"""
-
-	annotated = df.copy()
-	annotated["source_text_no_stopwords"] = ""
-	annotated["source_text_stemmed"] = ""
-	annotated["source_text_lemmatized"] = ""
-	annotated["target_text_no_stopwords"] = ""
-	annotated["target_text_stemmed"] = ""
-	annotated["target_text_lemmatized"] = ""
-
-	for index, row in annotated.iterrows():
-		source_views = normalize_text_for_linguistics(row["source_text"])
-		target_views = normalize_text_for_linguistics(row["target_text"])
-		annotated.at[index, "source_text_no_stopwords"] = source_views["no_stopwords"]
-		annotated.at[index, "source_text_stemmed"] = source_views["stemmed"]
-		annotated.at[index, "source_text_lemmatized"] = source_views["lemmatized"]
-		annotated.at[index, "target_text_no_stopwords"] = target_views["no_stopwords"]
-		annotated.at[index, "target_text_stemmed"] = target_views["stemmed"]
-		annotated.at[index, "target_text_lemmatized"] = target_views["lemmatized"]
-
-	return annotated
-
-
-def load_and_merge_raw_datasets(input_files: Sequence[Path]) -> pd.DataFrame:
-	"""Load every raw CSV and merge them into a single source of truth.
-
-	The project now has two complementary datasets: the original handcrafted
-	pairs and the new synthetic pairs. Merging them before cleaning ensures the
-	model sees a larger, more diverse training set while still going through one
-	consistent preprocessing path.
-	"""
-
-	frames = []
-	missing_files = []
-
-	for file_path in input_files:
-		if file_path.exists():
-			LOGGER.info("Loading raw dataset from %s", file_path)
-			frames.append(standardize_columns(pd.read_csv(file_path)))
-		else:
-			missing_files.append(file_path)
-
-	if not frames:
-		raise FileNotFoundError(
-			"No raw datasets were found. Expected at least one of: "
-			+ ", ".join(str(file_path) for file_path in input_files)
-		)
-
-	if missing_files:
-		LOGGER.warning(
-			"Skipping missing raw dataset(s): %s",
-			", ".join(str(file_path) for file_path in missing_files),
-		)
-
-	merged = pd.concat(frames, ignore_index=True)
-	merged = merged.drop_duplicates(subset=["source_text", "target_text"]).reset_index(drop=True)
-	LOGGER.info("Merged raw dataset rows before cleaning: %d", len(merged))
-	return merged
 
 
 def get_token_lengths(texts: Sequence[str], tokenizer: Any) -> List[int]:
@@ -442,16 +291,6 @@ def split_and_save(
 	return train_path, test_path
 
 
-def save_merged_enriched_dataset(df: pd.DataFrame, output_dir: Path) -> Path:
-	"""Persist the merged and fully enriched dataset for documentation and review."""
-
-	output_dir.mkdir(parents=True, exist_ok=True)
-	merged_path = output_dir / "merged_preprocessed.csv"
-	df.to_csv(merged_path, index=False)
-	LOGGER.info("Saved enriched merged dataset to %s (%d rows).", merged_path, len(df))
-	return merged_path
-
-
 def parse_args() -> argparse.Namespace:
 	"""Expose the most useful pipeline settings as command-line flags."""
 
@@ -459,14 +298,10 @@ def parse_args() -> argparse.Namespace:
 		description="Clean slang translation pairs and prepare train/test CSVs."
 	)
 	parser.add_argument(
-		"--input-files",
+		"--input-file",
 		type=Path,
-		nargs="*",
-		default=[
-			Path(__file__).resolve().parent / "raw" / "genz_dataset.csv",
-			Path(__file__).resolve().parent / "raw" / "synthetic_genz.csv",
-		],
-		help="Raw source/target CSV files to merge before preprocessing.",
+		default=Path(__file__).resolve().parent / "raw" / "genz_dataset.csv",
+		help="Path to the raw source/target CSV file.",
 	)
 	parser.add_argument(
 		"--output-dir",
@@ -507,13 +342,15 @@ def main() -> None:
 	configure_logging()
 	args = parse_args()
 
-	raw_df = load_and_merge_raw_datasets(args.input_files)
+	if not args.input_file.exists():
+		raise FileNotFoundError(f"Raw dataset not found: {args.input_file}")
+
+	LOGGER.info("Loading raw dataset from %s", args.input_file)
+	raw_df = pd.read_csv(args.input_file)
 
 	cleaned_df = standardize_columns(raw_df)
 	cleaned_df = remove_missing_and_empty_rows(cleaned_df)
 	LOGGER.info("Rows remaining after text cleaning: %d", len(cleaned_df))
-	cleaned_df = add_linguistic_normalization_columns(cleaned_df)
-	save_merged_enriched_dataset(cleaned_df, args.output_dir)
 
 	LOGGER.info("Loading tokenizer: %s", args.model_name)
 	tokenizer = get_tokenizer(args.model_name)
