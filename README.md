@@ -82,10 +82,10 @@ pip install -r backend/requirements.txt
 ### Step 4: Download Model Weights
 The fine-tuned model weights are not included to avoid repository bloating. If you need to download or verify:
 ```bash
-Download the model weights from Google Drive:
+# Download the model weights from Google Drive:
 https://drive.google.com/drive/folders/1RzhvJF7Y-U7UO_NRajVYlxetXcYCm6Vz?usp=sharing
 
-Place the contents into backend/fine_tuned_model/
+# Place the contents into backend/fine_tuned_model/
 ```
 
 ---
