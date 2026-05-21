@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# notebooks folder
+backend/fine_tuned_model/*.safetensors
+backend/fine_tuned_model/*.bin
+backend/fine_tuned_model/*.pt
