@@ -5,6 +5,8 @@ import logging
 from pathlib import Path
 
 import pandas as pd
+import torch
+fp16 = torch.cuda.is_available()
 from datasets import Dataset
 from transformers import (
     AutoModelForSeq2SeqLM,
@@ -91,14 +93,14 @@ def main(args):
         num_train_epochs=args.num_epochs,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
-        warmup_steps=500,
+        warmup_steps=50,
         weight_decay=0.01,
         save_total_limit=3,
         eval_strategy="epoch",
         save_strategy="epoch",
         logging_steps=100,
         predict_with_generate=True,
-        fp16=False,  # Set to True if using GPU with fp16 support
+        fp16=fp16,  # Set to True if using GPU with fp16 support
         learning_rate=1e-4,
         seed=42,
     )

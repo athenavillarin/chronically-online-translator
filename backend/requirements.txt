@@ -4,3 +4,6 @@ scikit-learn
 transformers
 sentencepiece
 emoji
+datasets
+torch
+accelerate
