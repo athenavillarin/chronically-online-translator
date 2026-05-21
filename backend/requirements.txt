@@ -1,4 +1,6 @@
 # Python dependencies
+flask
+flask-cors
 pandas
 scikit-learn
 transformers
