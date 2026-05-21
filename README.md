@@ -52,7 +52,7 @@ The Chronically Online Translator is a neural machine translation application de
 ## Setup and Installation
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip package manager
 - ~2GB of free disk space (for model weights)
 
@@ -82,7 +82,10 @@ pip install -r backend/requirements.txt
 ### Step 4: Download Model Weights
 The fine-tuned model weights are not included to avoid repository bloating. If you need to download or verify:
 ```bash
-# Model weights are in a separate drive (https://drive.google.com/drive/folders/1RzhvJF7Y-U7UO_NRajVYlxetXcYCm6Vz?usp=sharing)
+Download the model weights from Google Drive:
+https://drive.google.com/drive/folders/1RzhvJF7Y-U7UO_NRajVYlxetXcYCm6Vz?usp=sharing
+
+Place the contents into backend/fine_tuned_model/
 ```
 
 ---
@@ -151,11 +154,6 @@ curl -X POST http://localhost:5000/api/translate \
   -d '{"text":"thats lowkey fire tho"}'
 ```
 
-### Health Check
-```bash
-curl http://localhost:5000/health
-```
-
 ---
 
 ## Evaluation Results
@@ -198,6 +196,7 @@ chronically-online-translator/
 ├── data/
 │   ├── raw/                  # Original datasets
 │   └── processed/            # Train/test splits
+│   └── prepare_data.py       # Process data
 ├── training/
 │   └── train.py              # Model fine-tuning script
 ├── notebooks/
