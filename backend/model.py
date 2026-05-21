@@ -1,8 +1,8 @@
 """Local slang-to-standard translation service.
 
-The service prefers the fine-tuned model stored in backend/fine_tuned_model/.
-If the local weights are not present yet, it can fall back to a base FLAN-T5
-checkpoint so the API remains testable during development.
+The service requires a fine-tuned model stored in `backend/fine_tuned_model/`.
+It no longer falls back to an online checkpoint; a missing local checkpoint
+is considered an operational error and will prevent the service from starting.
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 TASK_PREFIX = "translate slang to standard: "
 DEFAULT_MODEL_DIR = Path(__file__).resolve().parent / "fine_tuned_model"
-DEFAULT_FALLBACK_MODEL = os.getenv("BACKEND_FALLBACK_MODEL", "google/flan-t5-small")
 MAX_INPUT_LENGTH = int(os.getenv("TRANSLATION_MAX_INPUT_LENGTH", "128"))
 MAX_NEW_TOKENS = int(os.getenv("TRANSLATION_MAX_NEW_TOKENS", "64"))
 
@@ -58,19 +57,11 @@ class TranslationService:
 				self._load_from_directory(self.model_dir)
 				return
 
-			if os.getenv("BACKEND_ALLOW_MODEL_FALLBACK", "1") == "1":
-				self.tokenizer = AutoTokenizer.from_pretrained(DEFAULT_FALLBACK_MODEL)
-				self.model = AutoModelForSeq2SeqLM.from_pretrained(DEFAULT_FALLBACK_MODEL)
-				self.model_source = DEFAULT_FALLBACK_MODEL
-				return
-
-			raise FileNotFoundError(
-				f"No model weights found in {self.model_dir}"
-			)
+			raise FileNotFoundError(f"No model weights found in {self.model_dir}")
 		except Exception as exc:  # pragma: no cover - surfaced through API startup
 			raise ModelNotReadyError(
 				"Unable to load a translation model. "
-				"Add fine-tuned weights to backend/fine_tuned_model/ or enable fallback."
+				"Add fine-tuned weights to backend/fine_tuned_model/"
 			) from exc
 
 	def _device(self) -> torch.device:
