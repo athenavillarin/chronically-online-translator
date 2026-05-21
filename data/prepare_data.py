@@ -70,8 +70,8 @@ def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
 	lower_map = {column.lower().strip(): column for column in renamed.columns}
 
 	aliases = {
-		"source_text": ["source_text", "normal", "input", "src", "english"],
-		"target_text": ["target_text", "gen_z", "slang", "output", "translation"],
+		"source_text": ["source_text", "gen_z", "slang", "output", "translation"],
+		"target_text": ["target_text", "normal", "input", "src", "english"],
 	}
 
 	resolved_columns = {}
